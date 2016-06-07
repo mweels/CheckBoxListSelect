@@ -1,0 +1,219 @@
+<html>
+
+<head>
+    <!-- Latest compiled and minified CSS -->
+    <link rel="stylesheet" href="http://maxcdn.bootstrapcdn.com/bootstrap/3.3.6/css/bootstrap.min.css">
+
+    <!-- jQuery library -->
+    <script src="https://ajax.googleapis.com/ajax/libs/jquery/1.12.2/jquery.min.js"></script>
+
+    <!-- Latest compiled JavaScript -->
+    <script src="http://maxcdn.bootstrapcdn.com/bootstrap/3.3.6/js/bootstrap.min.js"></script>
+
+</head>
+
+<body class='container'>
+
+
+<div id='output1'>
+    
+</div>
+
+
+<div id='output4'>    
+</div>
+   
+
+
+</body>
+
+</html>
+
+
+
+<script id="keyList" type="text/x-handlebars-template">
+
+    <div class="panel panel-default">
+        <div class="panel-heading">Columns</div>
+        <div class="panel-body" style='min-height:400px;overflow:scroll;max-height:400px'>
+
+            {{#keys}}
+            <Label>
+        
+                    <input type="checkbox" name="selected" value="{{key}}" data-index="{{index}}" data-o='{{JSON2string .}}'/>
+                    {{description}}
+    
+    </label><br/> {{/keys}}
+
+        </div>
+
+        <div class="panel-footer"><small>{{footer}}</small></div>
+
+    </div>
+
+</script>
+
+<script id="main" type="text/x-handlebars-template">
+
+    <div class="row">
+
+        <div class="col-xs-4 col-lg-5">
+
+            <div id="{{controlId}}_keyListOutput">
+            </div>
+        </div>
+        <div class="col-xs-4 col-lg-2" style='text-align:center;vertical-align:center'>
+            <br/><br/><br/>
+            <br/>
+            <input type='button' id="{{controlId}}_btnAdd" value=" Add Selected > "  data-controlId="{{controlId}}" class="btn btn.success" style='width:100%'/>
+            <br/><br/>
+             <input type='button' id="{{controlId}}_btnAddAll" value =" Add All >> "  data-controlId="{{controlId}}" class="btn btn.success" style='width:100%'/>            
+            
+            <br/>
+            <br/>
+            <hr>
+            <br/>
+            <input type='button' id="{{controlId}}_btnRemove" value = "< Remove Selected " data-controlId="{{controlId}}" class="btn btn.success" style='width:100%'/>           
+           
+            <br/><br/>
+             <input type='button' id="{{controlId}}_btnRemoveAll" value = "< Remove All "  data-controlId="{{controlId}}" class="btn btn.success" style='width:100%'/>           
+            
+        </div>
+        <div class="col-xs-4 col-lg-5">
+            <div id="{{controlId}}_selectListOutput">
+            </div>
+        </div>
+    </div>
+
+</script>
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/handlebars.js/4.0.5/handlebars.min.js"></script>
+
+<script>
+    Handlebars.registerHelper('JSON2string', function(object) {
+        return JSON.stringify(object);
+    });
+    
+    var keyListCompiled = Handlebars.compile($("#keyList").html());     
+    var mainCompiled = Handlebars.compile( $("#main").html());
+    
+    function ColumnSelector(controlId, keys, keysSelected, dest) {
+
+        var self = this;
+        
+        this._state = {
+            keys:  keys,
+            keysSelected: keysSelected,
+            controlId: controlId,
+            dest: dest      
+        }
+ 
+        this._keyDestId =  controlId + "_keyListOutput";
+        this._selectedDestId =  controlId + "_selectListOutput";
+      
+        $(document).on('click','#' + controlId + '_btnRemove',function() {
+
+            $("#" +  $(this).data().controlid + "_selectListOutput input:checked").each(function() {
+
+                removeKey(self._state.keysSelected, $(this).val());
+                self._state.keys.push($(this).data('o'));
+            });
+
+            self.render();
+
+        });
+        
+          $(document).on('click','#' + controlId + '_btnRemoveAll',function() {
+
+
+            $("#" + $(this).data().controlid  + "_selectListOutput input").each(function() {
+
+                removeKey(self._state.keysSelected, $(this).val());
+                self._state.keys.push($(this).data('o'));
+            });
+
+            self.render();
+
+        });
+
+        $(document).on('click','#' + controlId + '_btnAdd',function() {
+        
+                $("#" + $(this).data().controlid + "_keyListOutput input:checked").each(function() {
+
+                removeKey(self._state.keys, $(this).data('o').key);
+                self._state.keysSelected.push($(this).data('o'));
+
+            });
+
+            self.render();
+
+        });
+        
+             $(document).on('click','#' + controlId + '_btnAddAll',function() {
+        
+                $("#" +  $(this).data().controlid  + "_keyListOutput input").each(function() {
+
+                removeKey(self._state.keys, $(this).data('o').key);
+                self._state.keysSelected.push($(this).data('o'));
+
+            });
+
+            self.render();
+
+        });
+
+
+
+        removeKey = function(list, key) {
+
+            $(list).each(function(i, v) {
+                if (v.key == key)
+                    list.splice(i, 1);
+            });
+        }
+        
+        self.render();
+    };
+
+
+    ColumnSelector.prototype.renderKeys = function() {
+        
+        var footer = this._state.keys.length + " items.";
+        $("#" + this._keyDestId).html(keyListCompiled({ keys : this._state.keys, footer : footer }));
+    };
+
+    ColumnSelector.prototype.renderSelected = function() {
+        
+        var footer = this._state.keysSelected.length + " items selected.";
+        $("#" + this._selectedDestId).html(keyListCompiled({ keys : this._state.keysSelected, footer : footer }));
+
+
+    };
+
+    ColumnSelector.prototype.render = function() {
+
+        var html = mainCompiled(this._state);
+        
+        
+        document.getElementById(this._state.dest).innerHTML = html;
+        
+        this.renderSelected();
+        this.renderKeys();
+        
+       
+    };
+
+    var items = [];
+    for (i = 0; i < 10; i++) {
+        items.push({
+            key: i,
+            description: i + ' " Cool Descirption '
+        });
+    }
+
+    var cs = new ColumnSelector("control1",items, [],"output1");
+    
+    var cs2 = new ColumnSelector("control2",items, [],"output4");
+    
+   
+</script>
